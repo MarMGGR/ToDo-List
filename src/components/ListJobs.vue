@@ -53,42 +53,47 @@ const eliminateItem = (item) => {
     <button class="btn btn-primary" type="submit">Add</button>
   </form>
   <br />
-
-  <h2>Modify Tasks</h2>
-
-  <form id="job-modify" @submit.prevent="openModifyPanel">
-    <button class="btn btn-primary" type="submit">Modify Tasks</button>
-  </form>
-
-  <br />
-  <h2>Task List</h2>
-
-  <div class="job-list-container">
-    <table>
-      <tbody>
-        <tr v-for="item in listJobs" 
-            :key="item.id" 
-            class="static-class" 
-            >
-          <td @click="togglePurchased(item)"
-            :class="{strikeout: item.purchased, 
-                     'colorPriority-high': item.priority === 'high', 
-                     'colorPriority-medium': item.priority === 'medium', 
-                     'colorPriority-low': item.priority === 'low'}">
-                     {{ item.title }}</td>
-          <td>
-            <button class="btn btn-cancel" @click.stop="eliminateItem(item)">x</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div v-if="listJobs.length === 0">
+    <p>No tasks available.</p>
   </div>
+  <div v-else>
+    
+    <h2>Modify Tasks</h2>
 
-  <div v-if="seeModifyPanel" class="overlay">
-    <div class="popup">
-      <ModifyTaksPanel :listJobs="listJobs" />
-      <br />
-      <button class="btn btn-cancel" @click="closeModifyPanel">Close</button>
+    <form id="job-modify" @submit.prevent="openModifyPanel">
+      <button class="btn btn-primary" type="submit">Modify Tasks</button>
+    </form>
+
+    <br />
+    <h2>Task List</h2>
+
+    <div class="job-list-container">
+      <table>
+        <tbody>
+          <tr v-for="item in listJobs" 
+              :key="item.id" 
+              class="static-class" 
+              >
+            <td @click="togglePurchased(item)"
+              :class="{strikeout: item.purchased, 
+                      'colorPriority-high': item.priority === 'high', 
+                      'colorPriority-medium': item.priority === 'medium', 
+                      'colorPriority-low': item.priority === 'low'}">
+                      {{ item.title }}</td>
+            <td>
+              <button class="btn btn-cancel" @click.stop="eliminateItem(item)">x</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div v-if="seeModifyPanel" class="overlay">
+      <div class="popup">
+        <ModifyTaksPanel :listJobs="listJobs" />
+        <br />
+        <button class="btn btn-cancel" @click="closeModifyPanel">Close</button>
+      </div>
     </div>
   </div>
 </template>
