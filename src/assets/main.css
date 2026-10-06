@@ -63,6 +63,23 @@ body {
   max-width: 900px;
 }
 
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.popup {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  min-width: 300px;
+}
+
 h1 {
   font-weight: 500;
   font-size: 2.6rem;
@@ -71,7 +88,13 @@ h1 {
   color: #3d4852;
 }
 
-
+h2 {
+  font-weight: 500;
+  font-size: 1.6rem;
+  position: relative;
+  top: -10px;
+  color: #1b62b3cf;
+}
 
 ul {
   list-style: none;
@@ -99,9 +122,22 @@ li input {
   margin: 0 0.5rem 0;
 }
 
+.job-list-container {
+  display: flex;
+  gap: 0.15rem;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  margin: 0.5rem 0;
+  font-size: 1.25rem;
+  position: relative;
+  top: -10px;
+  color: #3d4852
+}
 
 #job-list > input,
-#job-list > select {
+#job-list > select,
+.modify-task-table input,
+.modify-task-table select {
   flex: 1;
   min-width: 0;
   width: auto;
@@ -116,11 +152,45 @@ li input {
   margin: 0.5rem 0;
 }
 
+.modify-task-table-container {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.modify-task-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #606f7b;
+}
+
+.modify-task-table th {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  padding: 0.5rem 0.75rem;
+  color: #1b62b3cf;
+  font-weight: 500;
+  text-align: left;
+  border-bottom: 1px solid #dce8f2;
+}
+
+.modify-task-table td {
+  padding: 0.5rem 0.35rem;
+  border-bottom: 1px solid #f1f5f8;
+}
+
+.modify-task-table input,
+.modify-task-table select {
+  width: 100%;
+  margin: 0;
+}
+
 #job-list {
   display: flex;
   align-items: center;
   gap: 0.5rem;
 }
+
 
 .add-item-form,
 .header {
