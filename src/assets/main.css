@@ -181,18 +181,27 @@ li input {
   color: #fff;
 }
 
+.colorPriority-high{
+  color: red;
+}
+
+.colorPriority-medium{
+  color: orange;
+}
+
+.colorPriority-low{
+  color: green;
+}
+
 .strikeout {
   text-decoration: line-through;
   color: #b8c2cc;
 }
 
-.strikeout:hover {
+.strikeout:hover  {
   color: #8795a1;
 }
 
-.priority {
-  color: #de751f;
-}
 input[type="checkbox"]{
   display: inline !important;
   box-shadow: none;
