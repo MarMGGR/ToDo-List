@@ -1,6 +1,6 @@
 <script setup>
 const props = defineProps({
-  listJobs: {
+  modifyJobs: {
     type: Array,
     required: true,
   },
@@ -21,7 +21,7 @@ const props = defineProps({
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in listJobs" :key="item.id">
+        <tr v-for="item in modifyJobs" :key="item.id">
           <td><input type="text" v-model="item.title" /></td>
           <td>
             <select v-model="item.priority">

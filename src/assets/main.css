@@ -185,6 +185,15 @@ li input {
   margin: 0;
 }
 
+.modify-task-buttons {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 1rem;
+}
+
 #job-list {
   display: flex;
   align-items: center;

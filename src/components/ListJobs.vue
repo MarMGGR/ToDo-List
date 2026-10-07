@@ -3,6 +3,7 @@ import ModifyTaksPanel from './ModifyTaksPanel.vue'
 import { ref, reactive, onMounted } from 'vue'
 
 const listJobs = reactive([])
+const modifyJobs = reactive([])
 const isLoading = ref(true)
 const loadError = ref('')
 
@@ -48,19 +49,32 @@ watch(
 
 const togglePurchased = (item) => {
   item.purchased = !item.purchased
-  modificarItem(item, item.title, item.priority)
+  modifyItem(item, item.title, item.priority)
 }
 
 const openModifyPanel = () => {
+  modifyJobs.splice(0, modifyJobs.length, ...listJobs.map(item => ({ ...item })))
+
   seeModifyPanel.value = true
+
 }
 
 const closeModifyPanel = () => {
   seeModifyPanel.value = false
 
   for (const item of listJobs) {
-    modificarItem(item, item.title, item.priority)
+    modifyItem(item, item.title, item.priority)
   }
+}
+
+const saveModifiedJobs = (modifiedJobs) => {
+  for (const modifiedItem of modifiedJobs) {
+    const originalItem = listJobs.find((item) => item.id === modifiedItem.id)
+    if (originalItem) {
+      modifyItem(originalItem, modifiedItem.title, modifiedItem.priority)
+    }
+  }
+  seeModifyPanel.value = false
 }
 
 const addItem = () => {
@@ -88,7 +102,7 @@ const eliminateItem = (item) => {
   }
 }
 
-const modificarItem = (item, newTitle, newPriority) => {
+const modifyItem = (item, newTitle, newPriority) => {
   const index = listJobs.indexOf(item)
   if (index > -1) {
     listJobs[index].title = newTitle
@@ -156,9 +170,11 @@ const modificarItem = (item, newTitle, newPriority) => {
 
     <div v-if="seeModifyPanel" class="overlay">
       <div class="popup">
-        <ModifyTaksPanel :listJobs="listJobs" />
-        <br />
-        <button class="btn btn-cancel" @click="closeModifyPanel">Close</button>
+        <ModifyTaksPanel :modifyJobs="modifyJobs" />
+        <div class="modify-task-buttons">
+          <button class="btn btn-primary" @click="saveModifiedJobs(modifyJobs)">Save Changes</button>
+          <button class="btn btn-cancel" @click="closeModifyPanel">Cancel</button>
+        </div>
       </div>
     </div>
   </div>
