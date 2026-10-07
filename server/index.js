@@ -19,6 +19,18 @@ app.post('/api/tasks', (req, res) => {
     res.status(201).json(newTask);
 });
 
+app.put('/api/tasks/:id', (req, res) => {  
+    const taskId = parseInt(req.params.id);
+    const taskIndex = tasks.findIndex(task => task.id === taskId);
+
+    if (taskIndex !== -1) {
+        tasks[taskIndex] = req.body;
+        res.json(tasks[taskIndex]);
+    } else {
+        res.status(404).json({ message: 'Task not found' });
+    }
+});
+
 app.delete('/api/tasks/:id', (req, res) => {
     const taskId = parseInt(req.params.id);
     const taskIndex = tasks.findIndex(task => task.id === taskId);

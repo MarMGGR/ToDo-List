@@ -48,6 +48,7 @@ watch(
 
 const togglePurchased = (item) => {
   item.purchased = !item.purchased
+  modificarItem(item, item.title, item.priority)
 }
 
 const openModifyPanel = () => {
@@ -56,12 +57,13 @@ const openModifyPanel = () => {
 
 const closeModifyPanel = () => {
   seeModifyPanel.value = false
+
+  for (const item of listJobs) {
+    modificarItem(item, item.title, item.priority)
+  }
 }
 
 const addItem = () => {
-
-  console.log('Lista de tareas antes de agregar:', listJobs)
-
   if (newItem.value.title.trim() !== '') {
     newItem.value.id = listJobs.length + 1
     listJobs.push({ ...newItem.value})
@@ -82,6 +84,21 @@ const eliminateItem = (item) => {
     listJobs.splice(index, 1)
     fetch(`/api/tasks/${item.id}`, {
       method: 'DELETE'
+    })
+  }
+}
+
+const modificarItem = (item, newTitle, newPriority) => {
+  const index = listJobs.indexOf(item)
+  if (index > -1) {
+    listJobs[index].title = newTitle
+    listJobs[index].priority = newPriority
+    fetch(`/api/tasks/${item.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(listJobs[index])
     })
   }
 }
