@@ -1,6 +1,7 @@
 <script setup>
 import ModifyTaksPanel from './ModifyTaksPanel.vue'
-import { ref, reactive } from 'vue'
+import { ref, reactive, watch, onMounted } from 'vue'
+
 
 
 const listJobs = reactive([
@@ -12,6 +13,22 @@ const listJobs = reactive([
 const newItem = ref({ id: listJobs.length + 1, title: '', purchased: false, priority: 'medium' })
 
 const seeModifyPanel = ref(false)
+
+onMounted(() => {
+  const storedList = localStorage.getItem('listJobs')
+  if (storedList) {
+    const parsedList = JSON.parse(storedList)
+    listJobs.splice(0, listJobs.length, ...parsedList)
+  }
+})
+
+watch(
+  listJobs,
+  (newList) => {
+    localStorage.setItem('listJobs', JSON.stringify(newList))
+  },
+  { deep: true }
+)
 
 const togglePurchased = (item) => {
   item.purchased = !item.purchased
