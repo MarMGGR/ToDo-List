@@ -7,6 +7,7 @@ const tasks = [
     { id: 1, title: 'Task 1', purchased: true, priority: 'high' },
     { id: 2, title: 'Task 2', purchased: false, priority: 'medium' },
     { id: 3, title: 'Task 3', purchased: false, priority: 'low' },
+    { id: 4, title: 'Task 4', purchased: true, priority: 'high' },
 ];
 
 app.get('/api/tasks', (req, res) => {
