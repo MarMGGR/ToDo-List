@@ -59,8 +59,19 @@ const closeModifyPanel = () => {
 }
 
 const addItem = () => {
+
+  console.log('Lista de tareas antes de agregar:', listJobs)
+
   if (newItem.value.title.trim() !== '') {
-    listJobs.push({ ...newItem.value, id: listJobs.length + 1 })
+    newItem.value.id = listJobs.length + 1
+    listJobs.push({ ...newItem.value})
+    fetch('/api/tasks', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(newItem.value)
+    })
     newItem.value.title = ''
   }
 }
@@ -69,6 +80,9 @@ const eliminateItem = (item) => {
   const index = listJobs.indexOf(item)
   if (index > -1) {
     listJobs.splice(index, 1)
+    fetch(`/api/tasks/${item.id}`, {
+      method: 'DELETE'
+    })
   }
 }
 
