@@ -1,38 +1,62 @@
 import express from 'express';
-import {Client, Pool} from 'pg';
+import { readFile } from 'node:fs/promises';
+import pg from 'pg';
+
+const { Client, Pool } = pg;
 
 const dbConfig = {
-    user: 'postgres',
-    host: 'localhost',
-    database: 'todolist',
-    password: '1234',
-    port: 5432,
+  user: 'postgres',
+  host: 'localhost',
+  database: 'postgres',
+  password: 'exobraindb',
+  port: 5432,
 };
 
+const VALID_PRIORITIES = new Set(['low', 'medium', 'high']);
+
+function normalizeTaskPayload(task) {
+  const title = typeof task?.title === 'string' ? task.title.trim() : '';
+  const purchased = Boolean(task?.purchased);
+  const priority = typeof task?.priority === 'string' ? task.priority.toLowerCase() : 'medium';
+
+  if (!title) {
+    throw new Error('Task title is required');
+  }
+
+  if (!VALID_PRIORITIES.has(priority)) {
+    throw new Error('Priority must be low, medium or high');
+  }
+
+  return { title, purchased, priority };
+}
+
 async function initializeDatabase() {
-    const userDB = new Client(dbConfig);
+  const adminClient = new Client(dbConfig);
 
-    await userDB.connect();
+  await adminClient.connect();
 
-    try {
-        await userDB.query('SELECT 1 FROM pg_database WHERE datname = $1', ['todolist']);
-        console.log('Connected to the database');
-    } finally {
-        await userDB.end();
+  try {
+    const dbExists = await adminClient.query('SELECT 1 FROM pg_database WHERE datname = $1', ['todo_list']);
+
+    if (dbExists.rowCount === 0) {
+      await adminClient.query('CREATE DATABASE "todo_list"');
+      console.log('Database created');
     }
+  } finally {
+    await adminClient.end();
+  }
 
+  const db = new Pool({ ...dbConfig, database: 'todo_list' });
 
+  const structureSql = await readFile(new URL('./database/structureDatabase.sql', import.meta.url), 'utf8');
+  await db.query(structureSql);
+  console.log('Database structure created');
 
-    const db = new Pool(dbConfig);
+  const seedSql = await readFile(new URL('./database/inserts.sql', import.meta.url), 'utf8');
+  const seedResult = await db.query(seedSql);
+  console.log(`${seedResult.rowCount} initial tasks inserted`);
 
-    const structureDB = await readFile('./server/database/createDatabase.sql', 'utf8');
-    await db.query(structureDB);
-
-    const insertDataSQL = await readFile('./server/database/insertData.sql', 'utf8');
-    await db.query(insertDataSQL);
-
-    return db;
-
+  return db;
 }
 
 const app = express();
@@ -40,59 +64,78 @@ app.use(express.json());
 
 const db = await initializeDatabase();
 
-app.get('/api/tasks', (req, res) => {
-    res.json(db.query('SELECT * FROM tasks'));
+app.get('/api/tasks', async (_req, res) => {
+  try {
+    const result = await db.query('SELECT * FROM tasks ORDER BY id');
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).json({ message: 'Error fetching tasks' });
+  }
 });
 
-app.post('/api/tasks', (req, res) => {
+app.post('/api/tasks', async (req, res) => {
+  try {
+    const { title, purchased, priority } = normalizeTaskPayload(req.body);
 
-    const newTask = req.body;
-    db.query('INSERT INTO tasks (title, priority) VALUES ($1, $2) RETURNING *', [newTask.title, newTask.priority])
-        .then(result => {
-            res.status(201).json(result.rows[0]);
-        })
-        .catch(err => {
-            console.error('Error inserting task:', err);
-            res.status(500).json({ message: 'Error inserting task' });
-        });
+    const result = await db.query(
+      'INSERT INTO tasks (title, purchased, priority) VALUES ($1, $2, $3) RETURNING *',
+      [title, purchased, priority]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error inserting task:', error);
+    const status = error.message === 'Task title is required' || error.message === 'Priority must be low, medium or high' ? 400 : 500;
+    res.status(status).json({ message: error.message || 'Error inserting task' });
+  }
 });
 
-app.put('/api/tasks/:id', (req, res) => {  
-    const taskId = parseInt(req.params.id);
-    const taskIndex = tasks.findIndex(task => task.id === taskId);
+app.put('/api/tasks/:id', async (req, res) => {
+  try {
+    const taskId = Number.parseInt(req.params.id, 10);
+    if (Number.isNaN(taskId)) {
+      return res.status(400).json({ message: 'Invalid task id' });
+    }
 
-    db.query('UPDATE tasks SET title = $1, priority = $2 WHERE id = $3 RETURNING *', [req.body.title, req.body.priority, taskId])
-        .then(result => {
-            if (result.rows.length > 0) {
-                res.json(result.rows[0]);
-            } else {
-                res.status(404).json({ message: 'Task not found' });
-            }
-        })
-        .catch(err => {
-            console.error('Error updating task:', err);
-            res.status(500).json({ message: 'Error updating task' });
-        });
+    const { title, purchased, priority } = normalizeTaskPayload(req.body);
+
+    const result = await db.query(
+      'UPDATE tasks SET title = $1, purchased = $2, priority = $3 WHERE id = $4 RETURNING *',
+      [title, purchased, priority, taskId]
+    );
+
+    if (result.rows.length > 0) {
+      res.json(result.rows[0]);
+    } else {
+      res.status(404).json({ message: 'Task not found' });
+    }
+  } catch (error) {
+    console.error('Error updating task:', error);
+    const status = error.message === 'Task title is required' || error.message === 'Priority must be low, medium or high' ? 400 : 500;
+    res.status(status).json({ message: error.message || 'Error updating task' });
+  }
 });
 
-app.delete('/api/tasks/:id', (req, res) => {
-    const taskId = parseInt(req.params.id);
-    const taskIndex = tasks.findIndex(task => task.id === taskId);
+app.delete('/api/tasks/:id', async (req, res) => {
+  try {
+    const taskId = Number.parseInt(req.params.id, 10);
+    if (Number.isNaN(taskId)) {
+      return res.status(400).json({ message: 'Invalid task id' });
+    }
 
-    db.query('DELETE FROM tasks WHERE id = $1 RETURNING *', [taskId])
-        .then(result => {
-            if (result.rows.length > 0) {
-                res.json(result.rows[0]);
-            } else {
-                res.status(404).json({ message: 'Task not found' });
-            }
-        })
-        .catch(err => {
-            console.error('Error deleting task:', err);
-            res.status(500).json({ message: 'Error deleting task' });
-        });
+    const result = await db.query('DELETE FROM tasks WHERE id = $1 RETURNING *', [taskId]);
+
+    if (result.rows.length > 0) {
+      res.json(result.rows[0]);
+    } else {
+      res.status(404).json({ message: 'Task not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    res.status(500).json({ message: 'Error deleting task' });
+  }
 });
-
 
 app.listen(3000, () => {
   console.log('Server is running on port 3000');
