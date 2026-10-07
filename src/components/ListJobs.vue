@@ -1,19 +1,35 @@
 <script setup>
 import ModifyTaksPanel from './ModifyTaksPanel.vue'
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 
-
-
-const listJobs = reactive([
-  { id: 1, title: 'Task 1', purchased: true, priority: 'high' },
-  { id: 2, title: 'Task 2', purchased: false, priority: 'medium' },
-  { id: 3, title: 'Task 3', purchased: false, priority: 'low' },
-])
+const listJobs = reactive([])
+const isLoading = ref(true)
+const loadError = ref('')
 
 const newItem = ref({ id: listJobs.length + 1, title: '', purchased: false, priority: 'medium' })
 
 const seeModifyPanel = ref(false)
 
+onMounted(async () => {
+  try {
+    const response = await fetch('/api/tasks')
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}`)
+    }
+
+    const tasks = await response.json()
+    if (!Array.isArray(tasks)) {
+      throw new Error('The tasks response is not a list')
+    }
+    listJobs.splice(0, listJobs.length, ...tasks)
+  } catch (error) {
+    loadError.value = error instanceof Error ? error.message : 'Unknown error'
+  } finally {
+    isLoading.value = false
+  }
+})
+
+/**
 onMounted(() => {
   const storedList = localStorage.getItem('listJobs')
   if (storedList) {
@@ -28,17 +44,10 @@ watch(
     localStorage.setItem('listJobs', JSON.stringify(newList))
   },
   { deep: true }
-)
+)**/
 
 const togglePurchased = (item) => {
   item.purchased = !item.purchased
-}
-
-const addItem = () => {
-  if (newItem.value.title.trim() !== '') {
-    listJobs.push({ ...newItem.value, id: listJobs.length + 1 })
-    newItem.value.title = ''
-  }
 }
 
 const openModifyPanel = () => {
@@ -47,6 +56,13 @@ const openModifyPanel = () => {
 
 const closeModifyPanel = () => {
   seeModifyPanel.value = false
+}
+
+const addItem = () => {
+  if (newItem.value.title.trim() !== '') {
+    listJobs.push({ ...newItem.value, id: listJobs.length + 1 })
+    newItem.value.title = ''
+  }
 }
 
 const eliminateItem = (item) => {
@@ -70,10 +86,12 @@ const eliminateItem = (item) => {
     <button class="btn btn-primary" type="submit">Add</button>
   </form>
   <br />
-  <div v-if="listJobs.length === 0">
+  <p v-if="loadError" role="alert">Could not load tasks: {{ loadError }}</p>
+  <p v-if="isLoading">Loading tasks...</p>
+  <div v-else-if="!loadError && listJobs.length === 0">
     <p>No tasks available.</p>
   </div>
-  <div v-else>
+  <div v-else-if="!loadError">
     
     <h2>Modify Tasks</h2>
 
