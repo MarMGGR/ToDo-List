@@ -7,7 +7,7 @@ const modifyJobs = reactive([])
 const isLoading = ref(true)
 const loadError = ref('')
 
-const newItem = ref({ id: listJobs.length + 1, title: '', purchased: false, priority: 'medium' })
+const newItem = ref({ title: '', purchased: false, priority: 'medium' })
 
 const seeModifyPanel = ref(false)
 
@@ -77,18 +77,28 @@ const saveModifiedJobs = (modifiedJobs) => {
   seeModifyPanel.value = false
 }
 
-const addItem = () => {
-  if (newItem.value.title.trim() !== '') {
-    newItem.value.id = listJobs.length + 1
-    listJobs.push({ ...newItem.value})
-    fetch('/api/tasks', {
+const addItem = async () => {
+  if (!newItem.value.title.trim()) return
+
+  try {
+    const response = await fetch('/api/tasks', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      body: JSON.stringify(newItem.value)
+      body: JSON.stringify(newItem.value),
     })
+
+    if (!response.ok) {
+      throw new Error(`No se pudo crear la tarea (${response.status})`)
+    }
+
+    const createdTask = await response.json()
+    listJobs.push(createdTask)
+
     newItem.value.title = ''
+  } catch (error) {
+    console.error('Error al crear la tarea:', error)
   }
 }
 
